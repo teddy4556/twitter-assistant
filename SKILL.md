@@ -11,19 +11,19 @@ related_skills: [ig-saver, browser-media-saver, hermes-feishu-send, hermes-tool-
 ---
 
 
-# Twitter 助手 v0.3.34
+# Twitter 助手 v0.3.36
 
 ## 0. 这个 skill 是什么
 
-写/改 twitter-assistant 油猴脚本的 always-on rules + 完整 procedure。v0.1.0 → v0.3.34 共 33 版迭代沉淀, 最重要的 3 件事:
+写/改 twitter-assistant 油猴脚本的 always-on rules + 完整 procedure。v0.1.0 → v0.3.36 共 36 版迭代沉淀, 最重要的 3 件事:
 
 1. **v0.3.32/v0.3.33 加宽面板架构** = 0 加宽油猴菜单 + 姐姐自创 HTML 面板 (悬浮按钮 ⚙️ + 弹窗), 完美避开油猴 sandbox "invalid name" throw (油猴 callback 闭包绝不能引用 page script 函数)
-2. **v0.3.34 强制 orig 下载** = `(media_url_https || '') + ':orig'` (图) + max bitrate mp4 (视频), 配 console.log 探针打印实际下载 URL/尺寸, 让用户立刻看到下到的是不是 orig
-3. **§1.13 元教训** = "不验证就写 = 28 版全错", 任何"加新功能 / 改 X 行为"前 step 0 跑 1 行 DevTools 验证当前真值 (§1.13 段 A/B/C 三类必查探针), 改完再 1 行 DevTools 验证生效
+2. **v0.3.36 强制 jpg 下载** = `baseUrl + '?format=jpg&name=orig'` 强制 X 后端 re-encode jpg, 文件名 / 扩展名 / content-type / 字节 4 位一致 (双击能打开), 视频保留 max bitrate mp4 不动
+3. **§1.13 元教训** = "不验证就写 = 28 版全错", 任何"加新功能 / 改 X 行为"前 step 0 跑 1 行 DevTools 验证当前真值 (§1.13 段 A/B/C-extra/D 四类必查探针), 改完再 1 行 DevTools 验证生效
 
-- **v0.3.34/v0.3.35 强制 orig 下载 + 大图真值验证** (10-13 立) = v0.3.7 起的 `:orig` 路径 + 加 console.log 探针 (v0.3.34) + 删探针 (v0.3.35), X 改版后 `?name=large` 和 `:orig` 字节 1:1 (ratio 1.00, 同档), 跑 §1.13 段 C-extra 验证下载的不是缩略图, 不需要"自动原图"功能. 完整见 `references/v0.3.34-v0.3.35-orig-confirm.md`
+- **v0.3.36 强制 jpg 格式 + 31 版总表** (10-13 立) = v0.3.7 起的 `:orig` 路径 (v0.3.7-v0.3.35 一直用) + 改 URL 加 `?format=jpg` 让 X re-encode (v0.3.36 新加) + 视频保留 max bitrate mp4. v0.3.36 DevTools 真值 (4 字段一致): `ct=image/jpeg, magic=ffd8ffe0 (JFIF JPEG), len=470KB (大图), isJpeg=true`. 视频/gif 不改 (gif 改 jpg 丢动画). 完整见 `references/v0.3.36-jpg-format.md`
 
-凝练在 §1 (12 段 always-on 铁律), 各版本踩坑在 `references/` 下按版本号分子文件.
+凝练在 §1 (13 段 always-on 铁律), 各版本踩坑在 `references/` 下按版本号分子文件.
 
 ## 1. Always-on rules(写代码前先过一遍)
 
@@ -50,7 +50,7 @@ related_skills: [ig-saver, browser-media-saver, hermes-feishu-send, hermes-tool-
 - ❌ v0.1.1 漏 `{date-time-local}`(自起名 `{local-time}`)
 - ❌ v0.1.2 占位符仿 IG %KEY%(用户原话"参照 ig saver"指 UI 不是占位符)
 - ❌ v0.1.6 错选 selector(应是 `pop().parentNode` 拿 wrapper,不是 pop 拿 button)
-- ❌ v0.2.0 读反"借鉴获取原图"+"阅读位置自动跳转"(以为要做媒体下载,实际是问能不能借鉴参考、v0.2.0 只做阅读位置)
+- ❌ v0.2.0 读反"借鉴获取原图"+"已删功能" (以为要做媒体下载, 实际是问能不能借鉴参考, v0.2.0 做了功能后 v0.3.4 删除)
 
 ### 1.3 加占位符的硬纪律(用户纠正 2026-10-12)
 
@@ -77,7 +77,7 @@ UI 错位时按此顺序查,**不要瞎改 CSS**:
 
 ### 1.6 永远先看参考 line 数,别猜
 
-参考 87KB = `TwitterX-Media-Downloader.user.js`(goemon2017)。媒体下载部分 line 350-368(cloneNode 注入)+ line 539(自定义日期)+ line 601(自动 -N/.ext)+ line 854-860(8 占位符 tag)+ line 1676(outline 边框)。阅读位置参考 = `X Reading Position & Media Download`(Copiis, 336KB),**只参考 line 87-200 核心**。
+参考 87KB = `TwitterX-Media-Downloader.user.js`(goemon2017)。媒体下载部分 line 350-368(cloneNode 注入)+ line 539(自定义日期)+ line 601(自动 -N/.ext)+ line 854-860(8 占位符 tag)+ line 1676(outline 边框)。
 
 `grep -nE "filename|MutationObserver|cloneNode|outline|setInterval" reference.user.js` 先看参考,再写。
 
@@ -126,9 +126,9 @@ GM_registerMenuCommand(`📐 设置 X (当前 ${getX()})`, () => { ... GM_setVal
 - `promptInt` 范围校验,超范围弹 alert 拒绝
 - 双路监听(setInterval 1000 监 path + MutationObserver 监 DOM,任一被 X 改版都不破)
 
-### 1.9 产品逻辑铁律:X.com /home 流深度上限 ~3 天(从 v0.2.3 阅读位置放弃抽象)
+### 1.9 产品逻辑铁律:X.com /home 流深度上限 ~3 天(从 v0.2.3 已删功能失败抽象)
 
-任何"基于 tweetId 在 /home 找推文"的方案,**最多覆盖 3 天内的 savedReading**。理由:`/home` 算法流只展示 50-1000 条最热推文,3 天前的推文基本被挤出首屏 + 自动加载深度有上限。
+任何"基于 tweetId 在 /home 找推文"的方案,**最多覆盖 3 天内的目标推文**。理由:`/home` 算法流只展示 50-1000 条最热推文,3 天前的推文基本被挤出首屏 + 自动加载深度有上限。
 
 **4 个被否决的修法**:
 1. ❌ 加更多重试(10+ 次 60s+):流深度不够,等不到
@@ -140,7 +140,7 @@ GM_registerMenuCommand(`📐 设置 X (当前 ${getX()})`, () => { ... GM_setVal
 - 任何"自动定位到推文 N"的产品设计,先评估"目标 N 在 feed 中的存活时长"
 - 如果用户执意要做,引向 X.com 自带的 Bookmarks 功能(X 自己设计的产品)
 - 不要劝退后还硬试(v0.2.3 姐姐出过"跳详情页"方案,用户拍板否,姐姐及时收回,不死磕)
-- **用户拍板关功能时,一次性彻底删**(GM_key + 工具函数 + 菜单 + 启动 + 诊断 log 全清,**不**留僵尸代码或半成品,v0.3.4 删阅读位置 196 行一次性删干净)
+- **用户拍板关功能时,一次性彻底删**(GM_key + 工具函数 + 菜单 + 启动 + 诊断 log 全清,**不**留僵尸代码或半成品, v0.3.4 删已删功能 196 行一次性删干净)
 
 ### 1.11 失败循环铁律:3 版硬上限 + 立即让用户装参考对照 (v0.3.6-0.3.19 共 14 版沉淀)
 
@@ -490,12 +490,6 @@ article [data-testid="ScrollSnap-List"] { max-width: 100% !important; }
 - **接管宽度不裁切**:锁 `max-width: 100%` 让容器跟主栏,**不动** X 原生 `aspect-ratio` / `padding-bottom` / `position: relative`(这些是 X 自己算高度的,接管会裁切图片)
 - **不藏 prev/next 按钮**:v0.3.3 姐姐加了 `display: none` 藏 X 原生滑按钮,3+ 张图无法用按钮翻页(用户反馈),v0.3.4 撤回
 
-### 4.4 ~~阅读位置~~(v0.2.0-v0.3.2,7 个版本迭代,**v0.3.4 删除**)
-
-~~**✅/⏹️ 自动跳转到上次阅读位置** — 点击切换,默认 `false`(v0.2.3 用户拍板关,因为 /home 流深度只 3 天)~~
-
-**删除原因**:X /home 算法流深度上限 1-3 天(§1.9),基于 tweetId 跳转必然空跳。`autoJumpEnabled` 旧值还在 `GM_setValue` 里占 ~50 字节,删不删不影响功能。**用户拍板删功能时一次性彻底删**(GM_key + 工具函数 + 菜单 + 启动 + 诊断 log 全清),不留僵尸代码。
-
 ## 5. 默认模板
 ```
 {user-name}(@{user-id})_{date-time}_{status-id}_{file-type}
@@ -504,7 +498,6 @@ article [data-testid="ScrollSnap-List"] { max-width: 100% !important; }
 ## 6. 关键能力
 - 一键下原图(`baseUrl + '?format=jpg&name=orig'` 强制 X re-encode jpg, v0.3.36, ext 跟字节一致, 双击能打开)+ 视频 max bitrate mp4
 - 8 占位符命名模板(油猴菜单可改)
-- ~~阅读位置自动记录 + 跳转~~(v0.2.0-v0.3.2,**v0.3.4 删掉**,见 §1.9 + §4.4)
 - 加宽面板 3 栏全控(左/主/右宽度可调,加 fillCenter 和隐藏左/右栏开关,v0.3.2 演变成型,见 §1.10)
 - 多图轮播接管宽度不裁切(v0.3.3 引入,v0.3.4 修 display:none bug,见 §1.10)
 - **v0.3.10 回归 v9.4 简洁架构**(见 §1.10 铁律 #5 + #6)—— `@run-at` 走油猴默认 + 文档级 `<style>` + `!important` + `MutationObserver(document.body)`,**3 行核心**。inline setProperty 双轨 + 200ms 轮询 + documentElement 兜底**全部砍掉**(v0.3.7/8/9 验证了 3 个版本 100+ 行白写,React mount 重置 inline style,inline 方案本身不稳)。`buildWidthCss` 函数仍然要全管 3 栏 width + 4 层 flex 嵌套(铁律 #1 + #4),不走 inline 而是文档级 CSS
@@ -518,7 +511,6 @@ article [data-testid="ScrollSnap-List"] { max-width: 100% !important; }
 
 - "twitter 助手 装上了" / "按钮不出现" / "下不了图" / "位置错" → §1.4 UI 错位排查
 - "v0.2.0 改 X" → patch bump 到 v0.2.1,流程 §2.2
-- "阅读位置不对" / "跳错推文" / "边框颜色" → `references/reading-position-cookbook.md`
 - "加新占位符" → **必须先 grep 参考 87KB** (§1.3)
 - "命名模板改" / "想加占位符" → 油猴菜单改,**不要**改代码常量
 - "参照 IG" / "参照 IG Helper" → ❌ **占位符绝不要参考 IG**(用户明确说,§1.2)
@@ -543,10 +535,8 @@ article [data-testid="ScrollSnap-List"] { max-width: 100% !important; }
 
 ## 8. 关联
 - **占位符 + 媒体下载** = 参考 `TwitterX-Media-Downloader.user.js`(goemon2017,87KB)
-- **阅读位置** = 参考 `X Reading Position & Media Download`(Copiis,336KB,**只取 line 87-200 核心**)
 - **油猴菜单风格** = 思路对齐 IG Saver 78KB line 1782-1796(prompt + emoji)
 - **跨 skill 注入踩坑** = `references/userscript-injection-pitfalls.md`
-- **阅读位置 cookbook** = `references/reading-position-cookbook.md`
 - **完整 changelog** = `references/v0.1.0-v0.2.0-changelog.md`
 - **加宽面板 31 版真因** = `references/v0.3.32-v0.3.33-html-panel.md` (v0.3.0-v0.3.33 全部踩坑 + 31 版真因总表)
 - **加宽面板 5 版真因 (v0.3.29-0.3.33)** = `references/v0.3.29-v0.3.33-pitfalls.md` (10 个真因 + 5 版流水账)

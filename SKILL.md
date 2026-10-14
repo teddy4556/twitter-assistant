@@ -1,13 +1,13 @@
 ---
-name: twitter-assistant
-version: 0.3.36
+name: userscript/twitter
+version: 0.3.38
 author: Hermes Agent
 license: MIT
-category: devops
+category: userscript
 status: released
-description: Twitter/X 油猴脚本(Twitter 助手),一键下载推文原图原视频 + 加宽面板(左/主/右 3 栏宽度可调)。**v0.3.36 = 36 版最终方案** — 推文图强制 jpg 格式 (X 后端 re-encode, 文件名/扩展名/content-type 字节 4 位一致) + 加宽面板用悬浮按钮 + 姐姐自创 HTML 面板 (0 加宽油猴菜单, 完美避开油猴 sandbox "invalid name" throw)。**v0.3.32 关键突破** = 不调 GM_registerMenuCommand 设加宽菜单 (callback 闭包引用 page script 函数, X 改版后 100% throw), 改用 setTimeout(1500) 加悬浮按钮 + showWidthPanel() 函数 + document.createElement('div') 注入, 全部 page script 代码不经油猴 wrapper 验证。**v0.3.33 UI 增强** = slider + 数字 input + +/- 10px 步进按钮, 3 种操作任选。**v0.3.34 探针确认 large === orig, v0.3.35 删探针, v0.3.36 改 URL 强制 jpg**。**5 段铁律永久生效** (见 §1.12)。
-tags: [userscript, twitter, x, media-download, wide-layout, anti-bot, graphql, slim, goemon2018-aligned, x-layout-3col-absolute, default-document-end, mutation-observer-only, gm-register-menu-throw, html-panel-fab, force-jpg-format, fact-516, fact-518, fact-520, fact-522]
-related_skills: [ig-saver, browser-media-saver, hermes-feishu-send, hermes-tool-path-helper, userscript-authoring, media-dl, media-dl-twitter]
+description: Use when 下载推文原图原视频 + 加宽 X 布局。v0.3.38 修 format=jpg 导致 PNG 原生图 404 (X 不做服务端转码, format 必须是原生值)。
+tags: [userscript, twitter, x, media-download, wide-layout, anti-bot, graphql, slim, force-native-format, no-transcode, fact-516, fact-518, fact-520, fact-522, fact-525]
+related_skills: [userscript/instagram, userscript/xiaohongshu, hermes-feishu-send, hermes-tool-path-helper, userscript/authoring, media-dl, media-dl-twitter]
 ---
 
 
@@ -182,6 +182,41 @@ GM_registerMenuCommand(`📐 设置 X (当前 ${getX()})`, () => { ... GM_setVal
 - ❌ **改完新版没让用户跑 1 行 DevTools** → 4 个关键值 (main 存在 / main width / primaryColumn width / style 标签数) 一目了然, 不跑永远在猜 (本会话 30 版后第一次跑, 1 行揭穿 28 版全错)
 - ❌ **加宽功能加 5+ 个油猴菜单 + callback 闭包引用 page script 函数** → 油猴 sandbox 跨 frame throw "invalid name" 阻断整个 IIFE (v0.3.6-v0.3.30 共 25 版都中招, 姐姐到 v0.3.31 才识破)
 - ❌ **加宽面板用 setTimeout 强制重写 CSS** → 油猴 sandbox setTimeout 也会 throw, 跟 requestIdleCallback/MutationObserver 一样
+
+### 1.11b CDN 的 format 参数不是转换器, 是原生格式声明器 (v0.3.38 血泪)
+
+**铁律: 改 `pbs.twimg.com` 的 `format=` 参数 = 改图片原件 = 404。**
+
+沙箱实测 2026-10-14 (3/3 完美反相关):
+
+| MEDIA_ID | 原生 | `format=jpg&name=orig` | `format=png&name=orig` |
+|---|---|---|---|
+| `F84wAzbXYAALzBC` | jpg | **200** `ffd8ffe0` | 404 |
+| `F9DOCS0W8AImlRC` | png | **404** | **200** `89504e47` |
+| `DfX6HKNXkAA5lkm` | jpg | **200** `ffd8ffe0` | 404 |
+
+v0.3.36/0.3.37 写死 `?format=jpg&name=orig` + `ext:'jpg'` → **所有 PNG 原生图 (截图 / GIF 封面 / 透明图) 100% 下载失败, jpg 图正常**。这正好对应用户说的「**某些**资源失败」——按格式分, 不是全挂。
+
+**修法**: 从 `media_url_https` 读出原生 `format` 原样带上, **只把 `name` 提到 `orig`**; `ext` 由原生 format 推导 (`png→.png` / `jpg→.jpg` / `webp→.webp`), 文件名跟字节 100% 一致。v0.3.36 想解决的「ext 写死 jpg 但字节是 png」用**推导 ext** 解决, **不需要转码** —— 转码这条路从根上不存在。
+
+**通用铁律 4 条 (跨任务)**:
+
+1. **改下载 URL 的验证探针, 样本必须覆盖多种格式**。取「页面上第一张图」= 抽样偏差经典案例 —— v0.3.36 就是靠第一张 jpg 图判定的「work」。
+2. **cdn 的 `format=` / `fm=` / `ext=` 不一定是转换器, 常常是「原格式声明器」**。动手前先测「给非原值会怎样」。
+3. **异步 API 的 `try/catch` 是幻觉**。`GM_download` / `GM_xmlhttpRequest` 只走回调不 throw —— v0.3.7~0.3.37 的 `<a download>` 兜底一次都没执行过。
+4. **`filter().length===0 → return null` 把失败伪装成「本来就没有」**。用户报「资源少了」先查这里 (v0.3.38 已修纯 HLS 视频静默丢弃)。
+
+**pbs.twimg.com 公网可达, 沙箱直接 curl 就能测, 不用抓推文 / 不用登录态**:
+
+```bash
+B="https://pbs.twimg.com/media/<MEDIA_ID>"
+for f in jpg png webp; do printf "%-6s " $f; \
+  curl -s -o /dev/null -w "http=%{http_code} size=%{size_download} ct=%{content_type}\n" \
+  -A "Mozilla/5.0" "$B?format=$f&name=orig"; done
+# 哪个返 200 哪个就是原生格式, 三个值互斥
+```
+
+完整实测数据 / 环境踩坑记录 (沙箱→X 各域可达性) / 复现 recipe 见 `references/v0.3.38-png-404-rootcause.md`。
 
 ### 1.12 油猴 sandbox "invalid name" throw 铁律 (v0.3.6-v0.3.31 共 26 版实战, 永久生效)
 
@@ -531,7 +566,10 @@ article [data-testid="ScrollSnap-List"] { max-width: 100% !important; }
 - "下载的图打不开" / "双击 jpg 没反应" / "jpg 文件字节是 png" / "想要 jpg 格式保存" / "图片查看器打不开下载的文件" → §1.13 段 D 探针 (`magic` 头 4 字节判读, jpg=`ffd8ff`, png=`89504e47`, webp=`52494646`). 真因: v0.3.7-v0.3.35 ext 写死 'jpg' 但 `:orig` URL 返回 png/webp 字节, 文件名跟内容不一致, 双击打不开. 修法: 出 v0.3.36 = 改 URL `${baseUrl}?format=jpg&name=orig` 强制 X re-encode jpg. 验证: 跑 D 探针, `magic: 'ffd8ff...'` + `isJpeg: true` = work. 视频/gif 不改 (改 jpg 丢动画). **改 X 任何下载类功能前必跑 D 探针, ext 跟字节不一致是隐性 bug 不会 throw, 但用户用不了**
 - "下到的图扩展名 .jpg 但实际是 png" / "文件管理器显示 .jpg 但内容是 png" → §1.13 段 D. 修法 v0.3.36 (URL 改 `?format=jpg&name=orig`). 油猴不能转码, 只能靠 X 后端 re-encode
 - "下到的视频 .mp4 没事" / "下到的图打不开" / "图跟视频区别" → §1.13 段 D, v0.3.36 只改图 (mp4 本来就是 mp4, gif 改 jpg 丢动画)
-- "下到的图 0 bytes" / "下载失败" / "文件空" → §1.13 段 C-extra 探针查 `?format=jpg&name=orig` content-length, 0 = X GraphQL 字段缺失, 走 v0.3.35 兜底 `media_url_https + ':orig'`
+- "下载失败" / "下不到某些资源" / "**有些能下有些不能**" / "png 图下不来" / "截图下不了" / "GIF 封面下不了" → **§1.11b format 参数根因**。X 不支持服务端转码, 写死 `format=jpg` 让所有 PNG 原生图 404。v0.3.38 已修 (保持原生 format + 只提 name=orig + ext 由 format 推导)。**先跑 §1.11b 那条 curl recipe 拿 MEDIA_ID 实测原生格式**
+- "资源少了" / "视频没下下来" / "只有 m3u8 的视频" → **§1.11b 铁律 4**, 纯 HLS 视频被 `filter(content_type==='video/mp4')` 静默丢弃, v0.3.38 已修
+- "点下载完全没反应" / "按钮一直转圈" → v0.3.7~0.3.37 的 `<a download>` 兜底是死代码 (GM_download 不 throw), v0.3.38 已把兜底搬进 onerror
+- "下到的图 0 bytes" / "文件空" → 先跑 §1.11b curl recipe 测原生 format, 再查 X GraphQL 字段是否缺失
 
 ## 8. 关联
 - **占位符 + 媒体下载** = 参考 `TwitterX-Media-Downloader.user.js`(goemon2017,87KB)
@@ -541,4 +579,5 @@ article [data-testid="ScrollSnap-List"] { max-width: 100% !important; }
 - **加宽面板 31 版真因** = `references/v0.3.32-v0.3.33-html-panel.md` (v0.3.0-v0.3.33 全部踩坑 + 31 版真因总表)
 - **加宽面板 5 版真因 (v0.3.29-0.3.33)** = `references/v0.3.29-v0.3.33-pitfalls.md` (10 个真因 + 5 版流水账)
 - **下载原图 2 版真因 (v0.3.34-0.3.35)** = `references/v0.3.34-v0.3.35-orig-confirm.md` (X 改版后 large === orig 真值 + 1 行 DevTools 验证 recipe)
-- **下载 jpg 格式 1 版真因 (v0.3.36)** = `references/v0.3.36-jpg-format.md` (ext 跟字节一致真因 + 1 行 DevTools 验证 `magic` 头 4 字节)
+- **下载 jpg 格式 1 版真因 (v0.3.36)** = `references/v0.3.36-jpg-format.md`。⚠️ **v0.3.36 的思路是错的 (写死 format=jpg 导致 PNG 原生图全挂), 已被 v0.3.38 推翻, 见 §1.11b**
+- **PNG 原图 404 根因 (v0.3.38)** = `references/v0.3.38-png-404-rootcause.md` (format 不是转换器是原生声明器 + 沙箱实测 3/3 反相关表 + GM_download catch 死代码 + 纯 HLS 视频静默丢弃 + 环境踩坑记录 + 复现 recipe)

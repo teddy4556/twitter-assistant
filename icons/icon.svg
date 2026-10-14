@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Twitter Assistant">
+  <title>Twitter Assistant</title>
+  <rect width="64" height="64" rx="14" fill="#1DA1F2"/>
+  <g fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 16 v20"/>
+    <path d="M23 27 l9 9 9-9"/>
+    <path d="M17 48 h30"/>
+  </g>
+</svg>

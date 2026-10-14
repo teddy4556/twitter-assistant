@@ -1,4 +1,4 @@
-# Greasy Fork 上架描述 (Twitter 助手 v0.3.37)
+# Greasy Fork 上架描述 (Twitter 助手 v0.3.38)
 
 > 复制下面 4 个字段到 Greasy Fork 提交表单.
 
@@ -15,7 +15,7 @@ Twitter 助手 (Twitter Assistant)
 ## 2. Description (简短, 1-2 句, 搜索结果展示)
 
 ```
-一键下载 Twitter/X 推文里的原图和原视频 (强制 jpg 格式), 8 占位符命名模板, 右下角 ⚙️ 加宽布局面板.
+一键下载 Twitter/X 推文里的原图和原视频 (原生格式不转码), 8 占位符命名模板, 右下角 ⚙️ 加宽布局面板.
 ```
 
 ---
@@ -33,7 +33,7 @@ Twitter 助手 (Twitter Assistant)
 ## 截图演示
 
 - 推文工具栏多 1 个下载按钮 (🖼️ / 🎬 图标)
-- 页面右下角悬浮 ⚙️ 按钮 (蓝色圆圈, 1.5 秒后出现)
+- 页面右下角悬浮 ⚙️ 按钮 (1.5 秒后出现)
 - 点 ⚙️ 弹设置面板: 时间轴 / 左栏 / 右栏 slider + 数字 input + +/- 10px 步进
 - 5 个加宽值 + 3 个开关: 中间填满 / 隐藏左栏 / 隐藏右栏
 
@@ -42,10 +42,29 @@ Twitter 助手 (Twitter Assistant)
 **操作**: 任意图片/视频推文, 工具栏点 🖼️ (图) / 🎬 (视频) 按钮.
 
 **下载文件**:
-- **图**: X 服务端 `name=orig` 档 (X 最大尺寸) + `format=jpg` 强制 jpg 编码
+- **图**: X 服务端 `name=orig` 档 (X 最大尺寸), **保留图片原生格式**
 - **视频**: 取 `video_info.variants` 里 `bitrate` 最高的 mp4
 - **文件名**: `{user-name}(@{user-id})_{date-time}_{status-id}_{file-type}.jpg` (默认模板, 可改)
 - **存放**: 浏览器默认下载目录
+
+### 关于图片格式: 为什么不统一转成 jpg
+
+X 的 `pbs.twimg.com` **不做服务端转码**。URL 里的 `format=` 参数只认这张图的**原生格式**, 给别的值直接返回 404。
+
+实测 (3 组样本, 完美反相关):
+
+| 图片 | 原生 | `format=jpg` | `format=png` |
+|---|---|---|---|
+| F84wAzbXYAALzBC | jpg | ✅ 200 | ❌ 404 |
+| F9DOCS0W8AImlRC | png | ❌ 404 | ✅ 200 |
+| DfX6HKNXkAA5lkm | jpg | ✅ 200 | ❌ 404 |
+
+所以本脚本的做法是: **保留原生 format, 只把 `name` 提到 `orig`**, 并按原生 format 推导文件扩展名
+(`png → .png` / `jpg → .jpg` / `webp → .webp`)。
+
+**结果**: 文件扩展名跟文件字节 4 位一致 (`ffd8ffe0` ↔ `.jpg`, `89504e47` ↔ `.png`), 双击一定能打开, 零转码损耗。
+
+下载失败时脚本会自动退回 X 原始链接重试一次。
 
 **8 个占位符** (可改):
 - `{user-name}` 用户昵称
@@ -82,22 +101,11 @@ Twitter 助手 (Twitter Assistant)
 
 **跨刷新保留**: 本地存储, 下次打开 X.com 自动恢复
 
-## 性能指标 (v0.3.37 实测真值)
-
-| 指标 | 真值 |
-|---|---|
-| 下载 = X 最大尺寸 | ✓ (`name=orig` 档, 跟 `name=large` 等价或更大) |
-| 文件格式 | jpg (字节 + 扩展名 + content-type 三位一致) |
-| content-type | `image/jpeg` |
-| 文件头魔数 | `ffd8ffe0` (JFIF JPEG 标准) |
-| 主页缩略图 | 0 张 (`name=thumb` / `name=small` 都没出现) |
-| 加载时间 | 1.5 秒后 ⚙️ 按钮出现 |
-
 ## 安装
 
 1. 装 [Tampermonkey](https://www.tampermonkey.net/) (或 ScriptCat / Violentmonkey)
 2. 装本脚本 (点 Greasy Fork 页面右上 "Install" 按钮)
-3. 打开 https://x.com, DevTools Console 应出现 `INSTALLED v0.3.37`
+3. 打开 https://x.com, DevTools Console 应出现 `INSTALLED v0.3.38`
 4. 1.5 秒后右下角出现 ⚙️ 按钮 = 装成功
 
 ## 兼容
@@ -115,8 +123,7 @@ Twitter 助手 (Twitter Assistant)
 
 ## 反馈
 
-- GitHub: https://github.com/teddy4556/twitter-assistant
-- 油猴菜单 → 📝 设置命名模板 (任何反馈可改)
+- GitHub: https://github.com/teddy4556/twitter-assistant/issues
 
 ## License
 
@@ -140,7 +147,10 @@ twitter, x, media-download, image-download, video-download, wide-layout, userscr
 @name:en:        Twitter Assistant
 @description:    油猴脚本,一键下载 Twitter/X 推文里的原图和原视频。文件名 8 占位符命名模板(油猴菜单可改)。右下角 ⚙️ 加宽面板(slider + 数字 input + +/- 10px 步进, 5 个加宽值 + 3 个开关)。
 @namespace:      https://github.com/teddy4556/twitter-assistant
-@version:        0.3.37
+@homepageURL:    https://github.com/teddy4556/twitter-assistant
+@supportURL:     https://github.com/teddy4556/twitter-assistant/issues
+@icon:           https://raw.githubusercontent.com/teddy4556/twitter-assistant/main/icons/icon.svg
+@version:        0.3.38
 @license:        MIT
 @match:          https://x.com/*
 @match:          https://twitter.com/*
@@ -154,13 +164,13 @@ twitter, x, media-download, image-download, video-download, wide-layout, userscr
 
 1. 注册/登录 https://greasyfork.org (GitHub OAuth 登录)
 2. 点右上 "Add a script" → 选 "Upload from file"
-3. 上传 `twitter-assistant-v0.3.37.user.js` (本仓库 `versions/`)
-4. 填上面 4 个字段 (Name / Description / 详细描述 / Tags), 改 @namespace / @homepageURL 到你的 GitHub
+3. 上传 `twitter-assistant-v0.3.38.user.js` (本仓库 `versions/`)
+4. 填上面 4 个字段 (Name / Description / 详细描述 / Tags)
 5. 提交审核 (1-3 天通过)
 
 ---
 
-## 7. 后续更新流程 (v0.3.38+)
+## 7. 后续更新流程 (v0.3.39+)
 
 1. 在 GitHub commit + push 新版 (本仓库有完整 git 历史)
 2. Greasy Fork 你的脚本页 → "Update" → 上传新 .user.js

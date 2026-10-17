@@ -2,10 +2,10 @@
 // @name               Twitter 助手
 // @name:zh            Twitter 助手
 // @name:en            Twitter Assistant
-// @description         油猴脚本,一键下载 Twitter/X 推文里的原图和原视频。下载按钮亮绿实心(深色图标 + 深色描边)+ 左下角 ⚙️ 面板:命名模板(8 占位符 chip 点一下就插入)+ 三栏宽度滑块(拖动即时生效)+ 下载进度徽标与 toast。
-// @description:zh      一键下载 X 推文里的原图和原视频(下载按钮亮绿 #00d084)。左下角 ⚙️ 面板里改文件名模板(`{user-name}` `{user-id}` `{status-id}` `{date-time[:格式]}` `{date-time-local[:格式]}` `{full-text}` `{file-type}` `{file-name}`,点 chip 直接插入)+ 三栏宽度(拖动即时生效)。
-// @description:en      One-click download of original images and videos from X tweets. Bottom-left gear panel: filename template with click-to-insert placeholder chips + live 3-column width sliders + download progress badge/toast.
-// @author              益新 <teddy4556@users.noreply.github.com>
+// @description         油猴脚本,一键下载 Twitter/X 推文里的原图和原视频。下载按钮透明底 + 绿色图标(跟 X 其他按钮一致,只有图标是绿的)+ 左下角 ⚙️ 面板:命名模板(8 占位符 chip 点一下就插入)+ 三栏宽度滑块(拖动即时生效)+ 下载进度徽标与 toast。
+// @description:zh      一键下载 X 推文里的原图和原视频(下载按钮透明底,绿色图标 #009e66)。左下角 ⚙️ 面板里改文件名模板(`{user-name}` `{user-id}` `{status-id}` `{date-time[:格式]}` `{date-time-local[:格式]}` `{full-text}` `{file-type}` `{file-name}`,点 chip 直接插入)+ 三栏宽度(拖动即时生效)。
+// @description:en      One-click download of original images and videos from X tweets. Transparent-background download button with green icon. Bottom-left gear panel: filename template with click-to-insert placeholder chips + live 3-column width sliders + download progress badge/toast.
+// @author              阑珊 <teddy4556@users.noreply.github.com>
 // @namespace           https://github.com/teddy4556/twitter-assistant
 // @homepageURL         https://github.com/teddy4556/twitter-assistant
 // @supportURL          https://github.com/teddy4556/twitter-assistant/issues

@@ -1,6 +1,6 @@
 # Twitter 助手 (Twitter Assistant)
 
-> Twitter/X 一键下载推文原图原视频 + 布局面板。**v0.3.47**, 2026-10-17。
+> Twitter/X 一键下载推文原图原视频 + 布局面板。**v0.3.50**, 2026-11-05。
 
 ## 1. 这是什么
 
@@ -16,7 +16,7 @@
 - 推文工具栏多 1 个**绿色下载图标**(透明底, 跟 X 其他按钮一致, 只有图标是绿的)
 - 页面**左下角**悬浮 ⚙️ 按钮, 可以拖到任意位置, 刷新后还在原地
 - 点 ⚙️ 弹设置面板:
-  - **文件名模板**区 —— textarea + 8 个占位符 chip(点一下插到光标处)+ 实时示例预览 + 恢复默认
+  - **文件名模板**区 —— textarea + 10 个占位符 chip(点一下插到光标处)+ 实时示例预览 + 恢复默认
   - **布局宽度**区 —— 时间轴 / 左栏 / 右栏 slider + 数字 input + ± 10px 步进,**拖动即时生效**
   - 中间填满 / 隐藏左栏 / 隐藏右栏 三个开关, 点一下立刻生效
 - 下载时按钮右上角浮出**计数徽标**(2/5 → ✓7), 底部弹出 toast 报完整文件名
@@ -32,20 +32,35 @@
 
 ### 3.2 装本脚本
 
-**A. 直接装本地文件** (推荐)
+**A. 一键装(推荐,自动更新)**
 
-1. 下载 [`versions/twitter-assistant-v0.3.47.user.js`](versions/twitter-assistant-v0.3.47.user.js)
+油猴面板 → 实用工具 → 从 URL 装,填:
+
+```
+https://raw.githubusercontent.com/teddy4556/twitter-assistant/main/twitter-assistant.user.js
+```
+
+这个 URL 是**稳定入口**,内容随最新版变。脚本已内置 `@updateURL` / `@downloadURL` 指向它,
+之后发新版油猴会自动检查更新(检查周期不固定,浏览器启动/页面加载时触发)。
+
+**B. 直接装本地文件**
+
+1. 下载 [`twitter-assistant.user.js`](twitter-assistant.user.js)(当前版 v0.3.50)
+   或归档档 [`versions/twitter-assistant-v0.3.50.user.js`](versions/twitter-assistant-v0.3.50.user.js)
 2. 油猴面板 → 实用工具 → 导入文件
 3. 打开 https://x.com 验证
 
-**B. Greasy Fork** (待发布)
+> ⚠️ **本地粘贴装的脚本收不到更新** —— 管理器靠「安装来源」决定去哪查更新,
+> 粘贴装没有来源 URL。想自动更新就用 A。
+
+**C. Greasy Fork** (待发布)
 - 链接: (TBD, 发布后填)
 
 ### 3.3 验证安装成功
 
 打开 https://x.com, 浏览器 DevTools Console, 应该看到:
 ```
-[tms ✅ INSTALLED v0.3.47] loaded — Twitter Media Saver ready...
+[tms ✅ INSTALLED v0.3.50] loaded — Twitter Media Saver ready...
 ```
 
 页面左下角 1.5 秒后出现蓝色 ⚙️ 悬浮按钮 = 装成功.
@@ -61,7 +76,7 @@
 **下载文件**:
 - **图**: `media_url_https` 的**原生 format** + `name=orig` (X 最大尺寸档)
 - **视频**: 取 `video_info.variants` 里 `bitrate` 最高的 mp4
-- **文件名**: `{user-name}(@{user-id})_{date-time}_{status-id}_{file-type}.jpg` (默认模板, 可改)
+- **文件名**: `Twitter#{user-name}#{post-id}#{date-time:YYYYMMDD}#{date-time:hhmmss}#{index}.jpg` (默认模板, 可改)
 - **存放**: 浏览器默认下载目录
 
 > ⚠️ **关于图片格式 (v0.3.38 起)**
@@ -73,10 +88,12 @@
 >
 > 如果下载失败, 脚本会自动退回 X 原始链接重下一次。
 
-**8 个占位符** (可改):
+**10 个占位符** (可改):
 - `{user-name}` 用户昵称
 - `{user-id}` 用户 screen_name
 - `{status-id}` 推文 ID
+- `{post-id}` 推文 ID 后 10 位(v0.3.49 起)
+- `{index}` 同帖多图序号,2 位补零(v0.3.49 起)
 - `{date-time}` UTC 时间 YYYYMMDD-hhmmss
 - `{date-time-local}` 本地时区
 - `{date-time:格式}` 自定义格式
@@ -143,6 +160,9 @@
 
 | 版本 | 日期 | 改了什么 |
 |---|---|---|
+| **v0.3.50** | 2026-11-05 | 修 `downloadOne` 120s 兜底定时器不 clearTimeout(页面开久累积几千个 pending timer)+ 修下载汇总不等 `GM_download` 回调就报成功 + 默认模板改家族六段式 `Twitter#{user-name}#{post-id}#{date-time:YYYYMMDD}#{date-time:hhmmss}#{index}` + 新增 `{post-id}` `{index}` 占位符 + 补 `@updateURL`/`@downloadURL` 稳定入口通道 |
+| **v0.3.49** | 2026-10-30 | 占位符扩到 10 个(加 `{post-id}` `{index}`)+ GraphQL 失效时自动降级 DOM 兜底(只下图片)+ `downloadOne` 改返回 Promise 等回调真回来再计数 |
+| **v0.3.48** | 2026-10-29 | 修超长文件名被截断时末尾 `#序号` 段丢失(同帖多图同名)—— `fitFileName` 改为保护尾部 `#<数字>` 段 |
 | **v0.3.47** | 2026-10-17 | 面板模板预览的示例数据去掉真实昵称,改中性占位(「作者昵称 / username」) |
 | **v0.3.46** | 2026-10-17 | **下载按钮改透明底 + 绿色图标** —— 跟 X 其他按钮一样,只有图标是绿的(`#009e66`);hover 出淡绿圆底。透明底后图标色必须**重新算**:原先的亮绿白底对比只有 2.03,比 X 自己的图标(6.12)还淡,压深到 3.45 才够 |
 | **v0.3.45** | 2026-10-17 | **P0 修 X 改版后 button 不再是直接子级** —— v0.3.41~v0.3.44 四版 CSS 全部静默失效(按钮一直是灰的),改后代选择器 |
@@ -153,6 +173,8 @@
 | v0.3.36 | 2026-10-13 | 加宽面板 + "强制 jpg 下载" (⚠️ 该思路已被 v0.3.38 推翻) |
 
 > v0.3.39~v0.3.42 在本地 skill 存档(`skills/userscript/twitter/`),未进 `versions/`。
+>
+> 归档档在 `versions/`,**更新通道不走那里** —— 更新源永远是根目录 `twitter-assistant.user.js`(稳定入口,文件名不带版本号)。
 
 完整历史见 `versions/` 目录与 `SKILL.md`。
 
